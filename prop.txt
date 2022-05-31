@@ -1,0 +1,4 @@
+Considerar: 
+- Homogenity
+- Energy
+- Dissimilarity
