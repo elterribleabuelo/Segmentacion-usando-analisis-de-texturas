@@ -4,33 +4,36 @@ import cv2
 import pandas as pd
 from sklearn.cluster import MiniBatchKMeans
 import h5py
+import json
 
 
 
 class Model:
     
-    def __init__(self,in_dir,images_dir,h5_dir,set_indicadores,indicadores_dir):
+    def __init__(self,in_dir,images_dir,h5_dir,set_indicadores,ratio,indicadores_dir):
         self.in_dir = in_dir # C:\Users\titos\Github\Proyecto CV - Analisis de vaciado bucket
         self.images_dir = images_dir # data\images
         self.h5_dir = h5_dir # data\dataset-h5
         self.set_indicadores = set_indicadores
+        self.ratio = ratio
         self.indicadores_dir = indicadores_dir # data\images-indicadores-haralick
 
     
-    def getNamesImages(self):
+    def getNamesImages(self, modo = 0):
         
         frames_Llenado = []
         frames_Vaciado = []
         frames_All = []
         count = 0
         
-        path_dir_main = self.in_dir + str("/") + self.images_dir
+        if modo == 0:
+            path_dir_main = self.in_dir + str("/") + self.images_dir
+        elif modo == 1:
+             path_dir_main = self.in_dir + str("/") + self.h5_dir
         
         for directorio in os.listdir(path_dir_main):
             
             path_tip_frame = path_dir_main + "/" + directorio
-            
-            # print(path_tip_frame)
             
             for image in os.listdir(path_tip_frame):
                 if count == 0:
@@ -48,7 +51,7 @@ class Model:
     
     def getShapeImage(self):
         
-        names_frames = self.getNamesImages()
+        names_frames = self.getNamesImages(modo = 0)
         
         path_dir = self.in_dir + str("/") +self.indicadores_dir
         
@@ -75,16 +78,15 @@ class Model:
     def getShapeDataframe(self):
         
         # Numero de imagenes
-        all_images = self.getNamesImages()
+        all_images = self.getNamesImages(modo = 0)
         num_images = len(all_images[0]) + len(all_images[0])
         
         #print(num_images) # 292
         
         # Numero de pixeles por imagen
         height = self.getShapeImage()[0] # 870
-        #print(height)
+        
         width  =  self.getShapeImage()[1] # 1130
-        #print(width)
         
         # Numero total de registros
         num_rows = height*width*num_images
@@ -100,7 +102,7 @@ class Model:
     
     def imagetoDataframe(self):
         
-        names_frames = self.getNamesImages()
+        names_frames = self.getNamesImages(modo = 0)
         
         path_dir = self.in_dir + str("/") + self.indicadores_dir
         
@@ -114,10 +116,7 @@ class Model:
         num_pixels = height*width
         # print(num_pixels) --> 983100
         
-        data = self.getShapeDataframe() # Dataset vacio
-        #print(data)
-        #print(data.shape)
-        
+       #  data = self.getShapeDataframe() # Dataset vacio
         
         
         for directorio in os.listdir(path_dir):
@@ -145,9 +144,7 @@ class Model:
                     
                     # add_array = np.reshape(image,(image.shape[0]*image.shape[1],-1)).astype("uint8").tolist()
                     
-                    # Error aqui
-                    # Error aqui
-                    # Error aqui
+                    
                     container_h5[:,i] = np.reshape(image,(image.shape[0]*image.shape[1],1)).astype("uint8").ravel()
                     
                 with h5py.File(path_dir_h5 + "/" + frame[:-4] + ".h5", "w") as hdf:
@@ -168,8 +165,100 @@ class Model:
             
             count += 1
         
+        message = "Escritura de archivos h5 exitosa!"
         
-        return 0
+        return message
+    
+    
+    def split_dataset(self):
+        
+        names_h5 = self.getNamesImages(modo = 1) # lista de listas
+        
+        path_dir_h5 = self.in_dir + str("/") + self.h5_dir
+        
+        # Numero total de registros para cada video
+        num_llenado_h5 = len(names_h5[0]) # 75
+        _num_llenado_h5 = [i for i in range(0,num_llenado_h5)] # lista
+        num_vaciado_h5 = len(names_h5[1]) # 45
+        _num_vaciado_h5 = [i for i in range(0,num_vaciado_h5)] # lista
+        
+        # Numero de registros para train por video
+        num_llenado_h5_train = int(num_llenado_h5*self.ratio) # 50
+        _num_llenado_h5_train = [i for i in range(0,num_llenado_h5_train)]
+        num_vaciado_h5_train = int(num_vaciado_h5*self.ratio) # 30
+        _num_vaciado_h5_train = [i for i in range(0,num_vaciado_h5_train)]
+        
+        # Numero de registros para test por video
+        num_llenado_h5_test = num_llenado_h5 - num_llenado_h5_train # 25
+        num_vaciado_h5_test = num_vaciado_h5 - num_vaciado_h5_train # 15
+        
+        # Ahora obtenemos 50 números (del 0 al 49) y los ordenamos de forma aleatoria(sin repeticion alguna)
+        # Estos numeros tienen asociado un nombre en el arreglo names_h5
+        # Llenamos estos nombres en una lista de modo que los nombres restantes sean los de test
+        
+        # print("_num_llenado_h5_train:",_num_llenado_h5_train)
+        # print("_num_vaciado_h5_train:",_num_vaciado_h5_train)
+        
+        index_registros_train_llenado = np.random.choice(_num_llenado_h5_train, num_llenado_h5_train, False) # lista con indices 
+        
+        index_registros_train_vaciado = np.random.choice(_num_vaciado_h5_train, num_vaciado_h5_train, False) # lista con indices
+        
+        
+        
+        index_registros_test_llenado = set(_num_llenado_h5) - set(index_registros_train_llenado)
+        index_registros_test_llenado = list(index_registros_test_llenado) # lista con indices
+        
+        index_registros_test_vaciado = set(_num_vaciado_h5) - set(index_registros_train_vaciado)
+        index_registros_test_vaciado = list(index_registros_test_vaciado) # lista con indices
+        
+        # Escribiendo en el archivo config.json
+        data = {}
+        data['train'] = []
+        data['test'] =  []
+        
+        # print(index_registros_train_llenado)
+        # print(index_registros_train_vaciado)
+        train_llenado = [path_dir_h5 + "/frames-Llenado/" + names_h5[0][x] for x in index_registros_train_llenado]
+        train_vaciado = [path_dir_h5 + "/frames-Vaciado/" + names_h5[1][x] for x in index_registros_train_vaciado]
+        
+        # print(len(index_registros_train_llenado))
+        # print(len(index_registros_train_vaciado))
+        
+        for i in train_llenado:
+            data['train'].append(i)
+        
+        for j in train_vaciado:
+            data['train'].append(j)
+        
+        
+        
+        data['train'] = list(np.random.choice(data['train'], len(data['train']), False))
+        
+        
+        print(len(data['train']))
+        
+        test_llenado = [path_dir_h5 + "/frames-Llenado/" + names_h5[0][x] for x in index_registros_test_llenado]
+        test_vaciado = [path_dir_h5 + "/frames-Vaciado/" + names_h5[1][x] for x in index_registros_test_vaciado]
+        
+        # print("##############")
+        # print(len(index_registros_test_llenado))
+        # print(len(index_registros_test_vaciado))
+        
+        for i in test_llenado:
+            data['test'].append(i)
+        
+        for j in test_vaciado:
+            data['test'].append(j)
+        
+        data['test'] = list(np.random.choice(data['test'], len(data['test']), False))
+        
+        
+        print(len(data['test']))
+        
+        with open (self.in_dir + '/config.json','w') as file:
+            json.dump(data,file)
+        
+        return "Archivo config.json escrito correctamente..."
     
     def clustering(self):
         pass
@@ -179,11 +268,19 @@ prueba = Model(r"C:\Users\titos\Github\Proyecto CV - Analisis de vaciado bucket"
                r"data\images",
                r"data\dataset-h5",
                ['dissimilarity','energy','homogeneity'],
+               0.70,
                r"data\images-indicadores-haralick")
+
+prueba.split_dataset()
+
+
+asd = prueba.split_dataset()
+
+asd[1]
 
 
 prueba.getShapeImage()
-names = prueba.getNamesImages()
+names = prueba.getNamesImages(modo = 0)
 
 print(names)
 
