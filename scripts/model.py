@@ -1,7 +1,8 @@
 import os
 import numpy as np 
 import cv2
-#import sklearn.cluster._k_means as Kmeans
+import pandas as pd
+from sklearn.cluster import MiniBatchKMeans
 
 
 class Model:
@@ -41,7 +42,8 @@ class Model:
         
         return frames_All
     
-    def imagetoarray(self):
+    
+    def getShapeImage(self):
         
         names_frames = self.getNamesImages()
         
@@ -50,9 +52,73 @@ class Model:
         count = 0
         
         for directorio in os.listdir(path_dir):
+            path_directorio = path_dir + "/" + directorio
+            for frame in names_frames[count]:
+                for indicador in self.set_indicadores:
+                    if count == 1:
+                        break
+                    
+                    image_dir = path_directorio + "/" + indicador + "/" + frame
+                    image = cv2.imread(image_dir,cv2.IMREAD_GRAYSCALE)
+                    
+                    count += 1
+        
+        height = image.shape[0] # Numero de filas --> Y
+        width = image.shape[1] # Numero de columnas --> X
+        
+        return (height,width)
+        
+    
+    def getShapeDataframe(self):
+        
+        # Numero de imagenes
+        all_images = self.getNamesImages()
+        num_images = len(all_images[0]) + len(all_images[0])
+        
+        #print(num_images) # 292
+        
+        # Numero de pixeles por imagen
+        height = self.getShapeImage()[0] # 870
+        #print(height)
+        width  =  self.getShapeImage()[1] # 1130
+        #print(width)
+        
+        # Numero total de registros
+        num_rows = height*width*num_images
+        
+        # Armando el dataframe 
+        X = np.zeros((num_rows,len(self.set_indicadores)),dtype='uint8') # K x N muestras (filas), y Gab  características (columnas)
+        columns_dataframe= [ str(i) for i in self.set_indicadores]
+        
+        # Dataframe final
+        data = pd.DataFrame(X, columns = columns_dataframe)
+        
+        return data
+    
+    def imagetoDataframe(self):
+        
+        names_frames = self.getNamesImages()
+        
+        path_dir = self.in_dir + str("/") +self.indicadores_dir
+        
+        count = 0
+        
+        count_images = 0
+        
+        height = self.getShapeImage()[0]
+        width  = self.getShapeImage()[1]
+        
+        num_pixels = height*width
+        # print(num_pixels) --> 983100
+        
+        data = self.getShapeDataframe() # Dataset vacio
+        #print(data)
+        #print(data.shape)
+        
+        for directorio in os.listdir(path_dir):
                         
             path_directorio = path_dir + "/" + directorio
-            print("Path directorio:",path_directorio)
+            #print("Path directorio:",path_directorio)
             
             for frame in names_frames[count]:
                 
@@ -61,11 +127,25 @@ class Model:
                     image_dir = path_directorio + "/" + indicador + "/" + frame
                     image = cv2.imread(image_dir,cv2.IMREAD_GRAYSCALE)
                     
+                    desde = count_images * num_pixels
+                    hasta = (count_images + 1) * num_pixels - 1
+                    
+                    add_array = np.reshape(image,(image.shape[0]*image.shape[1],-1)).astype("uint8").tolist()
+                    
+                    # Asignando al dataframe principal
+                    data.loc[desde:hasta,indicador] = add_array # vector columna
+                    
+                    print("Fin de un indicador")
+                
+                print("Indicadores de la imagen, %s guardada correctamente." % (frame))                                   
+                
+                count_images += 1
+                    
             
             count += 1
         
         
-        pass
+        return data
     
     def clustering(self):
         pass
@@ -73,9 +153,11 @@ class Model:
 
 prueba = Model(r"C:\Users\titos\Github\Proyecto CV - Analisis de vaciado bucket",
                r"data\images",
-               ['ASM', 'correlation','contrast','dissimilarity','energy','homogeneity'],
+               ['dissimilarity','energy','homogeneity'],
                r"data\images-indicadores-haralick")
 
+
+prueba.getShapeImage()
 names = prueba.getNamesImages()
 
 print(names)
@@ -85,5 +167,18 @@ names[0]
 names[1]
 prueba.getNamesImages()
 
-ss = prueba.imagetoarray()
-    
+ss = prueba.imagetoDataframe()
+
+ss.shape
+
+ss.head()
+
+
+
+# https://scikit-learn.org/stable/modules/generated/sklearn.cluster.MiniBatchKMeans.html#sklearn.cluster.MiniBatchKMeans
+
+# https://stackoverflow.com/questions/57507832/unable-to-allocate-array-with-shape-and-data-type
+
+# https://datascience.stackexchange.com/questions/44517/kmeans-large-dataset
+
+# https://scikit-learn.org/stable/modules/clustering.html#mini-batch-kmeans
