@@ -3,13 +3,16 @@ import numpy as np
 import cv2
 import pandas as pd
 from sklearn.cluster import MiniBatchKMeans
+import h5py
+
 
 
 class Model:
     
-    def __init__(self,in_dir,images_dir,set_indicadores,indicadores_dir):
+    def __init__(self,in_dir,images_dir,h5_dir,set_indicadores,indicadores_dir):
         self.in_dir = in_dir # C:\Users\titos\Github\Proyecto CV - Analisis de vaciado bucket
         self.images_dir = images_dir # data\images
+        self.h5_dir = h5_dir # data\dataset-h5
         self.set_indicadores = set_indicadores
         self.indicadores_dir = indicadores_dir # data\images-indicadores-haralick
 
@@ -99,7 +102,7 @@ class Model:
         
         names_frames = self.getNamesImages()
         
-        path_dir = self.in_dir + str("/") +self.indicadores_dir
+        path_dir = self.in_dir + str("/") + self.indicadores_dir
         
         count = 0
         
@@ -115,27 +118,48 @@ class Model:
         #print(data)
         #print(data.shape)
         
+        
+        
         for directorio in os.listdir(path_dir):
                         
             path_directorio = path_dir + "/" + directorio
+            
+            path_dir_h5 = self.in_dir + str("/") + self.h5_dir + "/" + directorio
             #print("Path directorio:",path_directorio)
             
             for frame in names_frames[count]:
                 
-                for indicador in self.set_indicadores:
+                # Declarar un contenedor que almacene las caracteristicas a estudiar de cada una de las imágenes
+                # Debe tener la forma [abcdfg,len(self.set_indicadores)]
+                # abcdefg : Debe tener como longitud image.shape[0]*image.shape[1]
+                
+                container_h5 = np.zeros((num_pixels,len(self.set_indicadores)), dtype = 'uint8')
+                
+                for (i,indicador) in enumerate(self.set_indicadores):
                     
                     image_dir = path_directorio + "/" + indicador + "/" + frame
                     image = cv2.imread(image_dir,cv2.IMREAD_GRAYSCALE)
                     
-                    desde = count_images * num_pixels
-                    hasta = (count_images + 1) * num_pixels - 1
+                    # desde = count_images * num_pixels
+                    # hasta = (count_images + 1) * num_pixels - 1
                     
-                    add_array = np.reshape(image,(image.shape[0]*image.shape[1],-1)).astype("uint8").tolist()
+                    # add_array = np.reshape(image,(image.shape[0]*image.shape[1],-1)).astype("uint8").tolist()
+                    
+                    # Error aqui
+                    # Error aqui
+                    # Error aqui
+                    container_h5[:,i] = np.reshape(image,(image.shape[0]*image.shape[1],1)).astype("uint8").ravel()
+                    
+                with h5py.File(path_dir_h5 + "/" + frame[:-4] + ".h5", "w") as hdf:
+                    
+                   hdf.create_dataset('x', data = container_h5)
+                   hdf.create_dataset('y', data = frame)
+                    
                     
                     # Asignando al dataframe principal
-                    data.loc[desde:hasta,indicador] = add_array # vector columna
+                    # data.loc[desde:hasta,indicador] = add_array # vector columna
                     
-                    print("Fin de un indicador")
+                    #print("Fin de un indicador")
                 
                 print("Indicadores de la imagen, %s guardada correctamente." % (frame))                                   
                 
@@ -145,7 +169,7 @@ class Model:
             count += 1
         
         
-        return data
+        return 0
     
     def clustering(self):
         pass
@@ -153,6 +177,7 @@ class Model:
 
 prueba = Model(r"C:\Users\titos\Github\Proyecto CV - Analisis de vaciado bucket",
                r"data\images",
+               r"data\dataset-h5",
                ['dissimilarity','energy','homogeneity'],
                r"data\images-indicadores-haralick")
 
