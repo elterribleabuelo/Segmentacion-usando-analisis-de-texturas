@@ -128,27 +128,3 @@ class HaralickAndGabor:
                                              str(image)),sum_matrix_resized_norm)
                 
                           
-
-
-# a = np.random.rand(256,256)
-# _a = a[:, :, np.newaxis]
-# print(_a.shape)
-# b = np.zeros((256,256))
-# _b = b[:, :, np.newaxis]
-# print(_b.shape)
-
-# _p = np.dstack((_a, _b))
-# print(_p.shape)
-
-# __p = np.reshape(_p, (_p.shape[0],_p.shape[1],-1,_p.shape[2]))
-# print(__p.shape)
-
-# __p[:,:,0,0]
-
-# props = greycoprops(__p,'contrast')
-# print(props.shape)
-
-# print(props[0,0])
-
-# print(a[:, :, np.newaxis].shape)
-# # (3, 2, 1)
