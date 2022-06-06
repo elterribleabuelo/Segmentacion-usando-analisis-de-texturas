@@ -150,8 +150,9 @@ class Generator:
                         
                     with h5py.File(path_dir_h5 + "/" + frame[:-4] + ".h5", "w") as hdf:
                         
+                       dt = h5py.string_dtype()
                        hdf.create_dataset('x', data = container_h5)
-                       hdf.create_dataset('y', data = frame)
+                       hdf.create_dataset('y', data = frame, dtype = dt)
                         
                     print("Indicadores de la imagen, %s guardada correctamente." % (frame))                                   
                     
@@ -254,8 +255,8 @@ class Generator:
         data['train'] = []
         data['test'] =  []
         
-        train_llenado = [path_dir_h5 + "/frames-Llenado/" + names_h5[0][x] for x in index_registros_train_llenado]
-        train_vaciado = [path_dir_h5 + "/frames-Vaciado/" + names_h5[1][x] for x in index_registros_train_vaciado]
+        train_llenado = [path_dir_h5 + "/frames-Llenado/" + names_h5[0][x][:-4] + ".h5" for x in index_registros_train_llenado]
+        train_vaciado = [path_dir_h5 + "/frames-Vaciado/" + names_h5[1][x][:-4] + ".h5" for x in index_registros_train_vaciado]
         
         for i in train_llenado:
             data['train'].append(i)
@@ -268,8 +269,8 @@ class Generator:
         
         # print(len(data['train']))
         
-        test_llenado = [path_dir_h5 + "/frames-Llenado/" + names_h5[0][x] for x in index_registros_test_llenado]
-        test_vaciado = [path_dir_h5 + "/frames-Vaciado/" + names_h5[1][x] for x in index_registros_test_vaciado]
+        test_llenado = [path_dir_h5 + "/frames-Llenado/" + names_h5[0][x][:-4] + ".h5" for x in index_registros_test_llenado]
+        test_vaciado = [path_dir_h5 + "/frames-Vaciado/" + names_h5[1][x][:-4] + ".h5" for x in index_registros_test_vaciado]
         
         for i in test_llenado:
             data['test'].append(i)

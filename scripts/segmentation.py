@@ -12,9 +12,10 @@ import scipy
 
 class Segmentation:
     
-    def __init__(self,in_dir,set_indicadores,num_cluster,alpha):
+    def __init__(self,in_dir,images_split,set_indicadores,num_cluster,alpha):
         
         self.in_dir = in_dir
+        self.images_split = images_split
         self.set_indicadores = set_indicadores
         self.num_cluster = num_cluster
         self.alpha = alpha
@@ -118,7 +119,7 @@ class Segmentation:
         
         return dictionary
     
-    def get_visual_words(self,path_image,dictionary):
+    def get_visual_words(self,img,dictionary):
         """
         
 
@@ -138,7 +139,7 @@ class Segmentation:
         
         
         
-        img = cv2.imread(path_image)
+        #img = cv2.imread(path_image)
         
         response=img.reshape(img.shape[0]*img.shape[1],-1)
         
@@ -150,51 +151,84 @@ class Segmentation:
         visual_words = visual_words.reshape(img.shape[0],img.shape[1])
     
         return visual_words
+    
+    def predict_kmeans(self):
+        
+        ### PREDICCION DE LOS CENTROS DE LOS CLUSTER ###
+        center = self.kmeans_compute_dictionary()
+        
+        ### LECTURA DE ARCHIVOS .json ###
+        with open(self.in_dir + "/configimage.json") as json_file:
+            config = json.load(json_file)
+        
+        path_dir_main = self.in_dir + str("/") + self.images_split 
+        path_split_output = self.in_dir + str("/") + "output/kmeans"
+        
+        
+        for directorio in os.listdir(path_dir_main):
+            # directorio --> train o test
+            
+            for direction in config[str(directorio)]:
+                print("Longitud",len(direction))
+                with h5py.File(direction, 'r') as f:
+                        image = f['x'][:]
+                        name = f['y'][()]
+                        
+                        img = self.get_visual_words(image, center)
+                        img = img.astype(np.uint8)*255
+                        cv2.imwrite(os.path.join(path_split_output, directorio,name[:-4] + ".png"),img)
+                        
+            
+        return "Prediccioón exitosa..."
 
     
 seg = Segmentation(r"C:\Users\titos\Github\Proyecto CV - Analisis de vaciado bucket",
+                   r"data\dataset-split",
                    ['dissimilarity','energy','homogeneity'],
                    2,
-                   20
+                   20000  # 10000
                    )
 
-centers = seg.kmeans_compute_dictionary()
+
+seg.predict_kmeans()
+
+# centers = seg.kmeans_compute_dictionary()
 
 
-image_visual = seg.get_visual_words(r"C:\Users\titos\Github\Proyecto CV - Analisis de vaciado bucket\data\images\frames-Vaciado\VaciadoPocket_45.png",centers)
+# image_visual = seg.get_visual_words(r"C:\Users\titos\Github\Proyecto CV - Analisis de vaciado bucket\data\images\frames-Vaciado\VaciadoPocket_45.png",centers)
 
-image_visual = image_visual.astype(np.uint8)*255
+# image_visual = image_visual.astype(np.uint8)*255
 
-cv2.namedWindow("Prueba", cv2.WINDOW_NORMAL)
+# cv2.namedWindow("Prueba", cv2.WINDOW_NORMAL)
 
-cv2.imshow("Prueba", image_visual)
+# cv2.imshow("Prueba", image_visual)
 
-#waits for user to press any key 
-#(this is necessary to avoid Python kernel form crashing)
-cv2.waitKey(0)
-#closing all open windows 
-cv2.destroyAllWindows() 
+# #waits for user to press any key 
+# #(this is necessary to avoid Python kernel form crashing)
+# cv2.waitKey(0)
+# #closing all open windows 
+# cv2.destroyAllWindows() 
 
-# path = r'C:\Users\titos\Github\Proyecto CV - Analisis de vaciado bucket\data\dataset-image-h5\frames-Vaciado'
-# path_h5 = path + "/VaciadoPocket_53.h5"
+# # path = r'C:\Users\titos\Github\Proyecto CV - Analisis de vaciado bucket\data\dataset-image-h5\frames-Vaciado'
+# # path_h5 = path + "/VaciadoPocket_53.h5"
 
-# with h5py.File(path_h5, 'r') as f:
+# # with h5py.File(path_h5, 'r') as f:
     
-#     image = f['x'][:]
-#     name = f['y'][()]
+# #     image = f['x'][:]
+# #     name = f['y'][()]
     
 
-# alpha = 10
-# d = image.shape[0]*image.shape[1]
-# print(d)
-# response = image.reshape((d,-1)) 
-# print(response.shape)
-# alphas = np.random.choice(d, alpha, False)
+# # alpha = 10
+# # d = image.shape[0]*image.shape[1]
+# # print(d)
+# # response = image.reshape((d,-1)) 
+# # print(response.shape)
+# # alphas = np.random.choice(d, alpha, False)
 
-# print(alphas)
+# # print(alphas)
 
-# alphaed_response = response[alphas]
+# # alphaed_response = response[alphas]
 
-# print(alphaed_response.shape) # (alpha,len(self.set_indicadores))
+# # print(alphaed_response.shape) # (alpha,len(self.set_indicadores))
 
 

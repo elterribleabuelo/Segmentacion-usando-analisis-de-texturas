@@ -1,6 +1,6 @@
 from scripts.preprocessing import Preprocessing
 from scripts.featureExtraction import HaralickAndGabor
-from script.utils import Generator
+from scripts.utils import Generator
 
 
 # =============================================================================
@@ -44,7 +44,7 @@ prueba = Generator(r"C:\Users\titos\Github\Proyecto CV - Analisis de vaciado buc
                    0.70,
                    r"data\images-indicadores-haralick")
 
-
+prueba.imagetoDataframe()
 prueba.split_dataset(1)
 prueba.otsu_segmentation()
 

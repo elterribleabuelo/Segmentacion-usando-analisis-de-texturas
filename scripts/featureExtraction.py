@@ -103,7 +103,7 @@ class HaralickAndGabor:
                         _p = np.dstack((_aux_co_matrix , _b)) # _p.shape = (256,256,2)
                         __p = np.reshape(_p, (_p.shape[0],_p.shape[1],-1,_p.shape[2])) #__p.shape = (256,256,1,2)
                         
-                        #print(count_Y,count_X)
+                        # print(count_Y,count_X)
                         # Sacamos los indicadores de Haralick
                         for i, prop in enumerate(properties):
                             GLCMFeatures[count_Y,count_X,i] =  greycoprops(__p, prop)[0,0] # escalar
@@ -127,4 +127,10 @@ class HaralickAndGabor:
                                              indicador,
                                              str(image)),sum_matrix_resized_norm)
                 
-                          
+
+
+# https://stackoverflow.com/questions/40919936/calculating-entropy-from-glcm-of-an-image       
+# https://github.com/computervision-xray-testing/pybalu/blob/master/pybalu/feature_extraction/haralick.py
+# https://stackoverflow.com/questions/40919936/calculating-entropy-from-glcm-of-an-image
+# https://github.com/luispedro/mahotas/blob/master/mahotas/features/texture.py
+# https://stackoverflow.com/questions/42624729/mahotas-library-for-glcm-calulation-and-window-size                  
